@@ -39,6 +39,8 @@
       }
     </style>
   </head>
+
+  <!-- This is awful HTML code HAHA but I hope we can work together to clean it up -->
   <body>
     <div class="game-screen" style="width:100vw">
       <h1>ROCK PAPER SCISSORS</h1>
@@ -99,16 +101,17 @@
         </div>
       </div>
     </div>
-    <script
-  src="https://code.jquery.com/jquery-3.7.1.min.js"
-  integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
-  crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <script>
+        //Initializes the connection with the socket.io Server we created in the server.js file
         var socket = io();
+
+        //Grabs all buttons for the current player
         let buttons = document.getElementsByClassName('choice-button');
 
+        //
         [].forEach.call(buttons, (button) => {
             button.addEventListener('click', (e) => {
               e.preventDefault();
@@ -126,11 +129,15 @@
             })
         });
 
+        //If the server runs a 'socket.emit()' method looking for 'max players',
+        //  this code will run.
         socket.on('max players', () => {
           document.getElementById('loading').classList = 'no-display';
           document.getElementById('max-players').className = 'display';
         });
 
+        //If the server runs a 'socket.emit()' method looking for 'receive id',
+        //  this code will run.
         socket.on('receive id', (ids) => {
             console.log(ids);
             document.getElementById('loading').className = 'no-display';
@@ -139,10 +146,15 @@
             document.getElementById('player-id').value = ids.player;
         });
 
+        //If the server runs a 'socket.emit()' method looking for 'waiting',
+        //  this code will run.
         socket.on('waiting', () => {
           document.getElementById('waiting').style.display = "block";
         });
 
+        //When a tie is determined in the server.js file, the server will make a call to all clients
+        //  (2 in our case) and will run this code for each client. This will simultaneously update the page for
+        //  both clients. Since this is the tie case, we can run the same method and show relatively the same output.
         socket.on('tie', () => {
           console.log("Tie game!");
           document.getElementById('waiting').style.display = "none";
@@ -164,6 +176,8 @@
           }, 5000);
         });
 
+        //This is the code that will run if the current player is the winner, as determined by the server.
+        //  This will only run if the server makes a specific call to the socket where the winning decision was made.
         socket.on('winner', (players) => {
           console.log("Winner!");
           let cpScore = players.find(p => p.id == socket.id).score;
@@ -187,6 +201,8 @@
           }, 5000);
         });
 
+        //This is the code that will run if the current player is the loser, as determined by the server.
+        //  This will only run if the server makes a specific call to the socket where the losing decision was made.
         socket.on('loser', (players) => {
           console.log("Loser :(");
           let cpScore = players.find(p => p.id == socket.id).score;
@@ -207,14 +223,6 @@
                 button.disabled = false;
               });
           }, 5000)
-        });
-
-        socket.on('receive decision', (decision) => {
-            console.log('in receive message');
-            var item = document.getElementById('player-choice');
-            item.textContent = msg;
-            messages.appendChild(item);
-            window.scrollTo(0, document.body.scrollHeight);
         });
     </script>
   </body>
