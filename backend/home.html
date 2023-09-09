@@ -1,0 +1,221 @@
+<html>
+  <head>
+    <title>Rock Paper Scissors</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+    <style>
+      .flex {
+        display: flex;
+      }
+      .justify-content-center {
+        justify-content: center;
+      }
+      .flex-column {
+        flex-direction: column;
+      }
+      .flex-row {
+        flex-direction: row;
+      }
+      body {
+        width: 100vw;
+        height: 100vh;
+      }
+      .col {
+        margin: auto;
+        text-align: center;
+      }
+      h1 {
+        text-align: center;
+      }
+      .no-display {
+        display: none;
+      }
+      .display {
+        display: block;
+      }
+      .selected {
+        background-color: lightsteelblue;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="game-screen" style="width:100vw">
+      <h1>ROCK PAPER SCISSORS</h1>
+      <div id="loading" class="display">
+        <h2>Loading...</h2>
+      </div>
+      <div id="max-players" class="no-display">
+        <h2>Max Players Reached</h2>
+      </div>
+      <div id="game" class="flex-column" style="display: none;">
+        <input id="player-id" style="display: none;" value="" />
+        <input id="game-id" style="display: none;" value="" />
+        <div class="m-3 flex flex-column justify-content-center align-items-center">
+          <h2 class="row flex justify-content-center">Score</h2>
+          <h3 class="row flex justify-content-center">
+            <span id="cp-score">0</span> - <span id="op-score">0</span>
+          </h3>
+        </div>
+        <div class="flex flex-row row m-2">
+          <div class="my-choice col" style="width:50%">
+            <h2>Current Player</h2>
+            <div class="choices">
+              <button class="choice-button" id="rock">Rock</button>
+              <button class="choice-button" id="paper">Paper</button>
+              <button class="choice-button" id="scissors">Scissors</button>
+            </div>
+            <div id="cp-choice-text" class="no-display">
+              <span>Your choice: <span id="cp-choice"></span></span>
+            </div>
+            <div id="winner-cp" class="no-display">
+              <h3>WINNER</h3>
+            </div>
+            <div id="loser-cp" class="no-display">
+              <h3>LOSER</h3>
+            </div>
+            <div class="tie" style="display: none;">
+              <h3>TIE</h3>
+            </div>
+          </div>
+          <div class="player-choice col" style="width: 50%;">
+            <h2>Opposing Player</h2>
+            <div id="op-choice-text" class="no-display">
+              <span>Their choice: <span id="op-choice"></span></span>
+            </div>
+            <div id="winner-op" class="no-display">
+              <h3>WINNER</h3>
+            </div>
+            <div id="loser-op" class="no-display">
+              <h3>LOSER</h3>
+            </div>
+            <div class="tie" style="display: none;">
+              <h3>TIE</h3>
+            </div>
+            <div id="waiting" style="display: none;">
+              <h3>Waiting on Opponent</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script
+  src="https://code.jquery.com/jquery-3.7.1.min.js"
+  integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+  crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        var socket = io();
+        let buttons = document.getElementsByClassName('choice-button');
+
+        [].forEach.call(buttons, (button) => {
+            button.addEventListener('click', (e) => {
+              e.preventDefault();
+              let choice = e.srcElement.id;
+              document.getElementById('cp-choice').innerText = choice;
+              document.getElementById('cp-choice-text').className = "display";
+              let game = document.getElementById('game-id').value;
+              let player = document.getElementById('player-id').value;
+
+              socket.emit('made choice', {player: player, choice: choice});
+              
+              [].forEach.call(buttons, (button) => {
+                button.disabled = true;
+              });
+            })
+        });
+
+        socket.on('max players', () => {
+          document.getElementById('loading').classList = 'no-display';
+          document.getElementById('max-players').className = 'display';
+        });
+
+        socket.on('receive id', (ids) => {
+            console.log(ids);
+            document.getElementById('loading').className = 'no-display';
+            document.getElementById('game').style.display = 'flex';
+            document.getElementById('game-id').value = ids.game;
+            document.getElementById('player-id').value = ids.player;
+        });
+
+        socket.on('waiting', () => {
+          document.getElementById('waiting').style.display = "block";
+        });
+
+        socket.on('tie', () => {
+          console.log("Tie game!");
+          document.getElementById('waiting').style.display = "none";
+          document.getElementById('op-choice').innerText = document.getElementById('cp-choice').innerText;
+          document.getElementById('op-choice-text').className = "display";
+          let tieElements = document.getElementsByClassName('tie');
+          [].forEach.call(tieElements, (element) => {
+            element.style.display = "block";
+          });
+          setTimeout(() => {
+            document.getElementById('op-choice-text').className = "no-display";
+            document.getElementById('cp-choice-text').className = "no-display";
+            [].forEach.call(tieElements, (element) => {
+              element.style.display = "none";
+            });
+            [].forEach.call(buttons, (button) => {
+                button.disabled = false;
+              });
+          }, 5000);
+        });
+
+        socket.on('winner', (players) => {
+          console.log("Winner!");
+          let cpScore = players.find(p => p.id == socket.id).score;
+          let opScore = players.find(p => p.id != socket.id).score;
+          document.getElementById('cp-score').innerText = cpScore;
+          document.getElementById('op-score').innerText = opScore;
+          document.getElementById('waiting').style.display = "none";
+          document.getElementById('winner-cp').style.display = "block";
+          document.getElementById('loser-op').style.display = "block";
+          console.log(players.find(p => p.id != socket.id).choice);
+          document.getElementById('op-choice').innerText = players.find(p => p.id != socket.id).choice;
+          document.getElementById('op-choice-text').className = "display";
+          setTimeout(() => {
+            document.getElementById('winner-cp').style.display = "none";
+            document.getElementById('loser-op').style.display = "none";
+            document.getElementById('cp-choice-text').className = "no-display";
+            document.getElementById('op-choice-text').className = "no-display";
+            [].forEach.call(buttons, (button) => {
+                button.disabled = false;
+              });
+          }, 5000);
+        });
+
+        socket.on('loser', (players) => {
+          console.log("Loser :(");
+          let cpScore = players.find(p => p.id == socket.id).score;
+          let opScore = players.find(p => p.id != socket.id).score;
+          document.getElementById('cp-score').innerText = cpScore;
+          document.getElementById('op-score').innerText = opScore;
+          document.getElementById('waiting').style.display = "none";
+          document.getElementById('loser-cp').style.display = "block";
+          document.getElementById('winner-op').style.display = "block";
+          document.getElementById('op-choice').innerText = players.find(p => p.id != socket.id).choice;
+          document.getElementById('op-choice-text').className = "display";
+          setTimeout(() => {
+            document.getElementById('winner-op').style.display = "none";
+            document.getElementById('loser-cp').style.display = "none";
+            document.getElementById('cp-choice-text').className = "no-display";
+            document.getElementById('op-choice-text').className = "no-display";
+            [].forEach.call(buttons, (button) => {
+                button.disabled = false;
+              });
+          }, 5000)
+        });
+
+        socket.on('receive decision', (decision) => {
+            console.log('in receive message');
+            var item = document.getElementById('player-choice');
+            item.textContent = msg;
+            messages.appendChild(item);
+            window.scrollTo(0, document.body.scrollHeight);
+        });
+    </script>
+  </body>
+</html>
